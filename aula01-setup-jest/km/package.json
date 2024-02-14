@@ -1,0 +1,21 @@
+{
+  "name": "setup-jest",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "type": "module",
+  "devDependencies": {
+    "jest": "^29.7.0"
+  },
+  "scripts": {
+    "test": "NODE_OPTIONS=--experimental-vm-modules npx jest --runInBand test/",
+    "test:dev": "NODE_OPTIONS=--experimental-vm-modules npx jest --runInBand --watchAll test/",
+    "test:debug": "node --experimental-vm-modules --inspect-brk node_modules/.bin/jest --runInBand --watchAll test/"
+  },
+  "keywords": [],
+  "author": "kelvinmodesto",
+  "license": "ISC",
+  "engines": {
+    "node": "v20.10.0"
+  }
+}
