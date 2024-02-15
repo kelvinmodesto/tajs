@@ -1,4 +1,4 @@
-import Service from './service';
+import Service from './service.js';
 
 const data = {
   username: `luffy-${Date.now()}`,

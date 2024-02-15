@@ -8,7 +8,7 @@ export default class Service {
   }
 
   #hashPassword(password) {
-    const hash = hash.create('sha256');
+    const hash = crypto.createHash('sha256');
     hash.update(password);
 
     return hash.digest('hex');
@@ -23,6 +23,7 @@ export default class Service {
 
     return fs.appendFile(this.#filename, data);
   }
+
   async read() {
     const lines = (await fs.readFile(this.#filename, 'utf8'))
       .split('\n')
