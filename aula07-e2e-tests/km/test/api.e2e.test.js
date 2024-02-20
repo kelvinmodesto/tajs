@@ -1,92 +1,81 @@
-import { describe, expect, it, jest } from '@jest/globals';
+import { afterAll, beforeAll, describe, expect, it, jest } from '@jest/globals';
 import Person from '../src/person.js';
 
+function waitForServerStatus(server) {
+  return new Promise((resolve, reject) => {
+    server.once('error', (err) => reject(err));
+    server.once('listening', () => resolve());
+  });
+}
+
 describe('e2e Suite Test', () => {
-  describe('#validate', () => {
-    it('should throw if the name is not present', () => {
-      const mockInvalidPerson = {
-        name: '',
-        cpf: '123.456.789-00',
-      };
+  describe('e2e Tests for Server in a non-test env', () => {
+    it('should start server with PORT 4000', async () => {
+      const PORT = 4000;
+      process.env.NODE_ENV = 'production';
+      process.env.PORT = PORT;
 
-      expect(() => Person.validate(mockInvalidPerson)).toThrow(
-        new Error('name is required')
+      jest.spyOn(console, console.log.name);
+
+      const { default: server } = await import('../src/index.js');
+      await waitForServerStatus(server);
+
+      const serverInfo = server.address();
+      expect(serverInfo.port).toBe(4000);
+      expect(console.log).toHaveBeenCalledWith(
+        `server is running at ${serverInfo.address}:${serverInfo.port}`
       );
-    });
 
-    it('should throw if the cpf is not present', () => {
-      const mockInvalidPerson = {
-        name: 'Steph Curry',
-        cpf: '',
-      };
-
-      expect(() => Person.validate(mockInvalidPerson)).toThrow(
-        new Error('cpf is required')
-      );
-    });
-
-    it('should not throw if the person is valid', () => {
-      const mockValidPerson = {
-        name: 'Steph Curry',
-        cpf: '123.456.789-30',
-      };
-
-      expect(() => Person.validate(mockValidPerson)).not.toThrow();
+      return new Promise((resolve) => server.close(resolve));
     });
   });
-  describe('#format', () => {
-    it('should format the person name and cpf', () => {
-      // AAA
-      // Arrange
-      const mockPerson = {
-        name: 'Steph Curry',
-        cpf: '123.456.789-30',
-      };
-      // Act
-      const formattedPerson = Person.format(mockPerson);
 
-      // Assert
-      const expected = {
-        name: 'Steph',
-        cpf: '12345678930',
-        lastName: 'Curry',
-      };
+  describe('e2e Tests for Server', () => {
+    let _testServer;
+    let _testServerAddress;
 
-      expect(formattedPerson).toStrictEqual(expected);
+    beforeAll(async () => {
+      process.env.NODE_ENV = 'test';
+      const { default: server } = await import('../src/index.js');
+      _testServer = server.listen();
+
+      await waitForServerStatus(_testServer);
+
+      const serverInfo = _testServer.address();
+      _testServerAddress = `http://localhost:${serverInfo.port}`;
     });
-  });
-  describe('#process', () => {
-    it('should process a valid person', () => {
-      // Uma outra ideia é não retestar o que já foi testado
-      // lembra dos checkpoints?
-      // Testou do caminho A ao caminho B,
-      //      agora testa do caminho B ao caminho C
-      // Então aqui, eu pulo o caminho A (validate), caminho B (format)
-      // e vou direto para o caminho C (save) pois estes caminhos
-      // ja foram validados
-      // Este método abaixo faz mais sentido para quando se tem interações externas como
-      // chamadas de API, bancos de dados, etc (que será mostrado na próxima aula)
-      // Mocks são simulações de funções que você pode fazer ao testar o comportamento!!
-      /// AAA = Arrange, Act, Assert
 
-      // Arrange
-      const mockPerson = {
-        name: 'Steph Curry',
-        cpf: '123.456.789-30',
-      };
+    afterAll((done) => _testServer.close(done));
 
-      jest.spyOn(Person, Person.validate.name).mockReturnValue();
-      jest.spyOn(Person, Person.format.name).mockReturnValue({
-        cpf: '12345678930',
-        name: 'Steph',
-        lastName: 'Curry',
+    it('should return 404 for unsupported routes', async () => {
+      const response = await fetch(`${_testServerAddress}/unsupported`, {
+        method: 'POST',
       });
-      // Act
-      const result = Person.process(mockPerson);
 
-      // Assert
-      const expected = 'ok';
-      expect(result).toStrictEqual(expected);
+      expect(response.status).toBe(404);
+    });
+    it('should return 400 and missing field message when body is invalid', async () => {
+      const invalidPerson = { name: 'Steph Curry' };
+      const response = await fetch(`${_testServerAddress}/persons`, {
+        method: 'POST',
+        body: JSON.stringify(invalidPerson),
+      });
+
+      expect(response.status).toBe(400);
+      const data = await response.json();
+      expect(data.validationError).toBe('cpf is required');
+    });
+
+    it('should return 200 and valid result when body is valid', async () => {
+      const validPerson = { name: 'Steph Curry', cpf: '123.456.789-30' };
+      const response = await fetch(`${_testServerAddress}/persons`, {
+        method: 'POST',
+        body: JSON.stringify(validPerson),
+      });
+
+      expect(response.status).toBe(200);
+      const data = await response.json();
+      expect(data.result).toBe('ok');
     });
   });
 });
