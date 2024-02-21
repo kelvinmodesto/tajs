@@ -1,4 +1,4 @@
-import { describe, it, beforeAll, afterAll, expect } from '@jest/globals';
+import { describe, it, beforeAll, afterAll, expect, jest } from '@jest/globals';
 import { server } from '../src/api.js';
 
 /*
@@ -49,9 +49,72 @@ describe('API  Users E2E Suite', () => {
     _testServer.close(done);
   });
 
-  it.todo('should register a new user with young-adult category');
+  it('should register a new user with young-adult category', async () => {
+    const expectedCategory = 'young-adult';
+    // importante pois o ano que vem o teste pode quebrar
+    // sempre que estiver usando datas, sempre mockar o tempo!
+    jest.useFakeTimers({
+      now: new Date('2024-03-23T00:00'),
+    });
 
-  it.todo('should register a new user with adult category');
-  it.todo('should register a new user with senior category');
-  it.todo('should throw an error when registering a under-age user');
+    const response = await createUser({
+      name: 'Monkey D. Luffy',
+      birthDay: '2000-03-23',
+    });
+
+    expect(response.status).toBe(201); // 201 - created
+    const result = await response.json();
+    expect(result.id).not.toBeUndefined();
+
+    const user = await findUserById(result.id);
+    expect(user.category).toBe(expectedCategory);
+  });
+
+  it('should register a new user with adult category', async () => {
+    const expectedCategory = 'adult';
+    jest.useFakeTimers({
+      now: new Date('2024-03-23T00:00'),
+    });
+
+    const response = await createUser({
+      name: 'Monkey D. Luffy',
+      birthDay: '1991-03-23',
+    });
+
+    expect(response.status).toBe(201); // 201 - created
+    const result = await response.json();
+    expect(result.id).not.toBeUndefined();
+
+    const user = await findUserById(result.id);
+    expect(user.category).toBe(expectedCategory);
+  });
+
+  it('should register a new user with senior category', async () => {
+    const expectedCategory = 'senior';
+    jest.useFakeTimers({
+      now: new Date('2024-03-23T00:00'),
+    });
+
+    const response = await createUser({
+      name: 'Monkey D. Luffy',
+      birthDay: '1947-03-23',
+    });
+
+    expect(response.status).toBe(201); // 201 - created
+    const result = await response.json();
+    expect(result.id).not.toBeUndefined();
+
+    const user = await findUserById(result.id);
+    expect(user.category).toBe(expectedCategory);
+  });
+  it('should throw an error when registering a under-age user', async () => {
+    const response = await createUser({
+      name: 'Monkey D. Luffy',
+      birthDay: '2018-03-24',
+    });
+
+    expect(response.status).toBe(400); // 400 - bad request
+    const result = await response.json();
+    expect(result.message).toBe('User must be 18yo or older');
+  });
 });

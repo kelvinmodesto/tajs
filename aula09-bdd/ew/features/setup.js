@@ -1,38 +1,37 @@
-import { Given, AfterAll } from '@cucumber/cucumber'
-import { server } from '../src/api.js'
-import sinon from 'sinon'
+import { Given, AfterAll } from '@cucumber/cucumber';
+import { server } from '../src/api.js';
+import sinon from 'sinon';
 
-let _testServer
-let _testServerAddress
-
+let _testServer;
+let _testServerAddress;
 
 function waitForServerStatus(server) {
-    return new Promise((resolve, reject) => {
-        server.once('error', (err) => reject(err))
-        server.once('listening', () => resolve())
-    })
+  return new Promise((resolve, reject) => {
+    server.once('error', (err) => reject(err));
+    server.once('listening', () => resolve());
+  });
 }
 
-AfterAll(done => {
-    sinon.restore()
-    server.closeAllConnections()
-    _testServer.close(done)
-})
+AfterAll((done) => {
+  sinon.restore();
+  server.closeAllConnections();
+  _testServer.close(done);
+});
 
 Given('I have a running server', async function () {
-    // se o sevidor ja estiver rodando, usa ele!
-    if(_testServer) return;
+  // se o sevidor ja estiver rodando, usa ele!
+  if (_testServer) return;
 
-    _testServer = server.listen();
+  _testServer = server.listen();
 
-    await waitForServerStatus(_testServer)
+  await waitForServerStatus(_testServer);
 
-    const serverInfo = _testServer.address()
-    this.testServerAddress = `http://localhost:${serverInfo.port}`
-})
+  const serverInfo = _testServer.address();
+  this.testServerAddress = `http://localhost:${serverInfo.port}`;
+});
 
 Given('The current date is {string}', async function (date) {
-    sinon.restore()
-    const clock = sinon.useFakeTimers(new Date(date).getTime())
-    this.clock = clock
-})
+  sinon.restore();
+  const clock = sinon.useFakeTimers(new Date(date).getTime());
+  this.clock = clock;
+});

@@ -73,7 +73,7 @@ describe('API  Users E2E Suite', () => {
   it('should throw an error when registering a under-age user', async function () {
     const response = await createUser({
       name: 'Xuxa da Silva',
-      birthDay: '2018-01-01', // 5 anos
+      birthDay: '2018-01-01', // 6 anos
     });
 
     expect(response.status).toBe(400); // bad request
