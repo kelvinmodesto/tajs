@@ -1,10 +1,10 @@
 import axios from 'axios';
-import fs from 'node:fs/promises';
-async function fetchAPIByPage(page = 1, counter = 1) {
+import fs from 'fs/promises';
+
+export async function fetchAPIByPage(page = 1, counter = 1) {
   const { data } = await axios.get(
     `https://rickandmortyapi.com/api/character/?page=${page}`
   );
-  //   await fs.writeFile(`get-page${page}.json`, JSON.stringify(data));
   const result = data?.results?.slice(0, counter).map((item) => {
     return {
       id: item.id,
@@ -14,4 +14,3 @@ async function fetchAPIByPage(page = 1, counter = 1) {
   });
   return result;
 }
-export { fetchAPIByPage };
